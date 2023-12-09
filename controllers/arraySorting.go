@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goLangAssignment/models"
 	"sort"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -33,28 +34,50 @@ func SequentialSorting(payload *models.Payload) *models.Response {
 	}
 }
 
-// ConcurrentSorting performs concurrent sorting on the input arrays.
-// It logs information about the input array size before sorting.
+//Batch Processing using conncurrent workers
 func ConcurrentSorting(payload *models.Payload) *models.Response {
 	// Log information about the input array size
 	fmt.Printf("Concurrent Sorting: Input array size %d\n", len(payload.ToSort))
 
-	// Initialize a WaitGroup to wait for all goroutines to finish
-	var wg sync.WaitGroup
-
 	// Record the start time
 	start := time.Now()
 
-	// Perform concurrent sorting using goroutines
-	for i := range payload.ToSort {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			sort.Ints(payload.ToSort[i])
-		}(i)
+	// Determine the number of workers (goroutines)
+	numWorkers := runtime.NumCPU()
+
+	// Create a channel to communicate the batches of subarrays to be sorted
+	batchCh := make(chan [][]int, numWorkers)
+
+	// Initialize a WaitGroup to wait for all batches to finish
+	var wg sync.WaitGroup
+
+	// Start worker goroutines
+	for i := 0; i < numWorkers; i++ {
+		go func() {
+			for batch := range batchCh {
+				for _, subarray := range batch {
+					sort.Ints(subarray)
+				}
+				wg.Done()
+			}
+		}()
 	}
 
-	// Wait for all goroutines to finish
+	// Queue tasks in batches
+	batchSize := len(payload.ToSort) / numWorkers
+	for i := 0; i < len(payload.ToSort); i += batchSize {
+		wg.Add(1)
+		end := i + batchSize
+		if end > len(payload.ToSort) {
+			end = len(payload.ToSort)
+		}
+		batchCh <- payload.ToSort[i:end]
+	}
+
+	// Close the channel to signal workers to exit
+	close(batchCh)
+
+	// Wait for all batches to finish
 	wg.Wait()
 
 	// Record the end time
@@ -66,3 +89,4 @@ func ConcurrentSorting(payload *models.Payload) *models.Response {
 		SortedArrays: payload.ToSort,
 	}
 }
+
