@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"os"
 )
 
 func main() {
@@ -22,21 +21,17 @@ func main() {
 		w.Write([]byte(`{"message": "API working, hello from arraySorting repository"}`))
 	}).Methods("GET")
 
-	// Get the port from the environment variable, defaulting to 8080 if not set
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	// Print a message to indicate that the server is starting
-	log.Printf("Server is starting at http://localhost:%s...\n", port)
-
 	// Use http.Handle("/", router) to handle all routes with the router
 	http.Handle("/", router)
 
+
+	// If there is no error, the server has started successfully
+	log.Printf("Server is starting on port: 8080...\n")
+
 	// Start the server on the specified port
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		log.Fatal("Error starting server:", err)
+	    log.Fatal("Error starting server:", err)
 	}
+
 }
