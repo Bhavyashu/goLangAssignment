@@ -27,4 +27,6 @@ bin/
 # Ignore local configuration files
 .idea/
 .vscode/
+.env
+
 
