@@ -3,6 +3,7 @@ package main
 import (
 	"goLangAssignment/routes"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 )
@@ -21,9 +22,17 @@ func main() {
 		w.Write([]byte(`{"message": "API working, hello from arraySorting repository"}`))
 	}).Methods("GET")
 
-	// Use http.Handle("/", router) to handle all routes with the router
-	http.Handle("/", router)
 
+
+	// Use CORS middleware to enable cross-origin requests
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},    // Allow any origin
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type"},
+	})
+
+	// Use http.Handle("/", corsHandler.Handler(router)) to handle all routes with the router and enable CORS
+	http.Handle("/", corsHandler.Handler(router))
 
 	// If there is no error, the server has started successfully
 	log.Printf("Server is starting on port: 8080...\n")
