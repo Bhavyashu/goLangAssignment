@@ -1,50 +1,68 @@
-// controllers/arraySorting.go
+// arraySorting.go
 package controllers
 
 import (
-   "goLangAssignment/models"
-   "sort"
-   "sync"
-   "fmt"
-   "time"
+	"fmt"
+	"goLangAssignment/models"
+	"sort"
+	"sync"
+	"time"
 )
 
-// Logic for sequential sorting
+// SequentialSorting performs sequential sorting on the input arrays.
+// It logs information about the input array size before sorting.
 func SequentialSorting(payload *models.Payload) *models.Response {
-    // Log information about the input array size
-    fmt.Printf("SequentialSorting Sorting: Input array size %d\n", len(payload.ToSort))
+	// Log information about the input array size
+	fmt.Printf("Sequential Sorting: Input array size %d\n", len(payload.ToSort))
 
+	// Record the start time
+	start := time.Now()
 
-   start := time.Now()
-   for i := range payload.ToSort {
-      sort.Ints(payload.ToSort[i])
-   }
-   end := time.Now()
+	// Perform sequential sorting
+	for i := range payload.ToSort {
+		sort.Ints(payload.ToSort[i])
+	}
 
-   return &models.Response{
-      TimeNS:       end.Sub(start).Nanoseconds(),
-      SortedArrays: payload.ToSort,
-   }
+	// Record the end time
+	end := time.Now()
+
+	// Return the response with sorted arrays and time taken
+	return &models.Response{
+		TimeNS:       end.Sub(start).Nanoseconds(),
+		SortedArrays: payload.ToSort,
+	}
 }
 
-// Logic for concurrent sorting
+// ConcurrentSorting performs concurrent sorting on the input arrays.
+// It logs information about the input array size before sorting.
 func ConcurrentSorting(payload *models.Payload) *models.Response {
-   fmt.Printf("Concurrent Sorting: Input array size %d\n", len(payload.ToSort))
-   var wg sync.WaitGroup
+	// Log information about the input array size
+	fmt.Printf("Concurrent Sorting: Input array size %d\n", len(payload.ToSort))
 
-   start := time.Now()
-   for i := range payload.ToSort {
-      wg.Add(1)
-      go func(i int) {
-         defer wg.Done()
-         sort.Ints(payload.ToSort[i])
-      }(i)
-   }
-   wg.Wait()
-   end := time.Now()
+	// Initialize a WaitGroup to wait for all goroutines to finish
+	var wg sync.WaitGroup
 
-   return &models.Response{
-      TimeNS:       end.Sub(start).Nanoseconds(),
-      SortedArrays: payload.ToSort,
-   }
+	// Record the start time
+	start := time.Now()
+
+	// Perform concurrent sorting using goroutines
+	for i := range payload.ToSort {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			sort.Ints(payload.ToSort[i])
+		}(i)
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Record the end time
+	end := time.Now()
+
+	// Return the response with sorted arrays and time taken
+	return &models.Response{
+		TimeNS:       end.Sub(start).Nanoseconds(),
+		SortedArrays: payload.ToSort,
+	}
 }

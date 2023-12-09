@@ -9,10 +9,13 @@ import (
 )
 
 func main() {
+	// Create a new Gorilla Mux router
 	router := mux.NewRouter()
+
+	// Setup application routes
 	routes.SetupRoutes(router)
 
-	// Add a new route for the '/test' endpoint directly under the main router
+	// Add a test endpoint directly under the main router
 	router.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -27,11 +30,11 @@ func main() {
 
 	// Print a message to indicate that the server is starting
 	log.Printf("Server is starting at http://localhost:%s...\n", port)
-	
+
 	// Use http.Handle("/", router) to handle all routes with the router
 	http.Handle("/", router)
 
-	// Start the server on  specified port
+	// Start the server on the specified port
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal("Error starting server:", err)
