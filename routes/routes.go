@@ -3,8 +3,8 @@ package routes
 
 import (
 	"fmt"
-	"goLangAssignment/controllers"
-	"goLangAssignment/models"
+	"app/controllers"
+	"app/models"
 	"encoding/json"
 	"net/http"
 	"github.com/gorilla/mux"

@@ -3,7 +3,7 @@ package controllers
 
 import (
 	"fmt"
-	"goLangAssignment/models"
+	"app/models"
 	"sort"
 	"runtime"
 	"sync"

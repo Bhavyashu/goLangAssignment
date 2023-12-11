@@ -1,5 +1,5 @@
-# Use the official Golang image as a base image
-FROM golang:alpine
+# Use the official Golang image as a base image without specifying the Alpine version
+FROM  golang
 
 # Set the working directory inside the container
 WORKDIR /app

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"goLangAssignment/routes"
+	"app/routes"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"log"
@@ -21,6 +21,14 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"message": "API working, hello from arraySorting repository"}`))
 	}).Methods("GET")
+
+	// Update the home route to return an HTML response
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	    w.Header().Set("Content-Type", "text/html")
+	    w.WriteHeader(http.StatusOK)
+	    w.Write([]byte("<h1>Hello, World!</h1>"))
+	}).Methods("GET")
+
 
 
 
