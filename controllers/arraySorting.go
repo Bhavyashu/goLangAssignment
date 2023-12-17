@@ -46,7 +46,7 @@ func ConcurrentSorting(payload *models.Payload) *models.Response {
 	numWorkers := runtime.NumCPU()
 
 	// Create a channel to communicate the batches of subarrays to be sorted
-	batchCh := make(chan [][]int, numWorkers)
+	batchChannel := make(chan [][]int, numWorkers)
 
 	// Initialize a WaitGroup to wait for all batches to finish
 	var wg sync.WaitGroup
@@ -54,7 +54,7 @@ func ConcurrentSorting(payload *models.Payload) *models.Response {
 	// Start worker goroutines
 	for i := 0; i < numWorkers; i++ {
 		go func() {
-			for batch := range batchCh {
+			for batch := range batchChannel {
 				for _, subarray := range batch {
 					sort.Ints(subarray)
 				}
@@ -71,11 +71,11 @@ func ConcurrentSorting(payload *models.Payload) *models.Response {
 		if end > len(payload.ToSort) {
 			end = len(payload.ToSort)
 		}
-		batchCh <- payload.ToSort[i:end]
+		batchChannel <- payload.ToSort[i:end]
 	}
 
 	// Close the channel to signal workers to exit
-	close(batchCh)
+	close(batchChannel)
 
 	// Wait for all batches to finish
 	wg.Wait()

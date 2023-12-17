@@ -16,11 +16,6 @@ func SetupRoutes(r *mux.Router) {
 	r.HandleFunc("/process-concurrent", concurrentSortingHandler).Methods("POST")
 }
 
-// SetupOtherRoutes can be used to add additional routes if needed.
-func SetupOtherRoutes(r *mux.Router) {
-	// Add other routes here if needed
-}
-
 // sequentialSortingHandler handles the request for sequential sorting.
 func sequentialSortingHandler(w http.ResponseWriter, r *http.Request) {
 	handleSortingRequest(w, r, controllers.SequentialSorting)
