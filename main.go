@@ -6,7 +6,20 @@ import (
 	"github.com/rs/cors"
 	"log"
 	"net/http"
+	"html/template"
 )
+
+
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("./static/index.html")
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.Execute(w, nil)
+}
+
 
 func main() {
 	// Create a new Gorilla Mux router
@@ -22,12 +35,7 @@ func main() {
 		w.Write([]byte(`{"message": "API working, hello from arraySorting repository"}`))
 	}).Methods("GET")
 
-	// Update the home route to return an HTML response
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	    w.Header().Set("Content-Type", "text/html")
-	    w.WriteHeader(http.StatusOK)
-	    w.Write([]byte("<h1>Hello, World!</h1>"))
-	}).Methods("GET")
+	router.HandleFunc("/", handleIndex).Methods("GET")
 
 
 
