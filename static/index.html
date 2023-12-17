@@ -75,7 +75,7 @@
     <input type="file" id="jsonFileInput" accept=".json" />
 
     <div id="buttonContainer">
-        <button onclick="testPerformance()">Test Performance</button>
+      <button onclick="testPerformance()">Test Performance</button>
     </div>
 
     <table id="resultTable">
@@ -92,12 +92,12 @@
 
     <script>
       // Change backendUrl according to the environment whether it's local or deploying on the render.com
-      const backendUrl ='http://localhost:8080';
+      const backendUrl = "http://localhost:8080";
 
       async function testPerformance() {
-        const inputSizes = [10, 100, 1000, 10000, 100000];
+        const inputSizes = [10, 100, 1000, 10000, 100000, 1000000];
 
-        for (const inputSize of inputSizes) {
+        async function processInputSize(inputSize) {
           const fileInput = document.getElementById("jsonFileInput");
           const file = fileInput.files[0];
 
@@ -110,29 +110,47 @@
 
                 // Slice the input array or double the size if needed
                 let slicedInput = [];
-                if(jsonContent.to_sort.length>inputSize){
+                if (jsonContent.to_sort.length > inputSize) {
                   slicedInput = jsonContent.to_sort.slice(0, inputSize);
-                }else{
-                  slicedInput = [...jsonContent.to_sort, ...jsonContent.to_sort];
+                } else {
+                  while (slicedInput.length < inputSize) {
+                    slicedInput = [...slicedInput, ...jsonContent.to_sort];
+                  }
                 }
                 console.log(slicedInput.length);
 
+                const sequentialResponse = await sendSortingRequest(
+                  "process-single",
+                  slicedInput
+                );
+                
+                const concurrentResponse = await sendSortingRequest(
+                  "process-concurrent",
+                  slicedInput
+                );
 
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                const sequentialResponse = await sendSortingRequest("process-single", slicedInput);
-                // await new Promise(resolve => setTimeout(resolve, 1000));
-                const concurrentResponse = await sendSortingRequest("process-concurrent", slicedInput);
-              
-
-                const sequentialSeconds = sequentialResponse.time_ns 
-                const concurrentSeconds = concurrentResponse.time_ns 
+                const sequentialSeconds = sequentialResponse.time_ns;
+                const concurrentSeconds = concurrentResponse.time_ns;
+                const totalArraySizeC = concurrentResponse.sorted_arrays.length;
+                const totalArraySizeS = sequentialResponse.sorted_arrays.length;
+                console.log(
+                  "size of arrays matched",
+                  totalArraySizeC == totalArraySizeS
+                );
 
                 // Calculate performance percentage
-                const performance = ((sequentialSeconds - concurrentSeconds) / sequentialSeconds) * 100;
+                const performance =
+                  ((sequentialSeconds - concurrentSeconds) /
+                    sequentialSeconds) *
+                  100;
 
                 // Update the table with the results
-                updateResultTable(inputSize, sequentialSeconds.toFixed(0), concurrentSeconds.toFixed(0), performance.toFixed(2));
+                updateResultTable(
+                  totalArraySizeS,
+                  sequentialSeconds.toFixed(0),
+                  concurrentSeconds.toFixed(0),
+                  performance.toFixed(2)
+                );
               } catch (error) {
                 console.error("Error processing data:", error);
               }
@@ -143,24 +161,31 @@
             console.error("Please select a JSON file.");
           }
         }
+
+        for (const inputSize of inputSizes) {
+          await processInputSize(inputSize);
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Add this line to introduce a 5-second delay
+        }
       }
 
       async function sendSortingRequest(endpoint, toSort) {
-        const response = await fetch(
-          `${backendUrl}/${endpoint}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ to_sort: toSort }),
-          }
-        );
+        const response = await fetch(`${backendUrl}/${endpoint}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ to_sort: toSort }),
+        });
 
         return response.json();
       }
 
-      function updateResultTable(inputSize, sequentialTime, concurrentTime, performance) {
+      function updateResultTable(
+        inputSize,
+        sequentialTime,
+        concurrentTime,
+        performance
+      ) {
         const resultBody = document.getElementById("resultBody");
         const newRow = resultBody.insertRow();
 
@@ -169,10 +194,29 @@
         const cell3 = newRow.insertCell(2);
         const cell4 = newRow.insertCell(3);
 
-        cell1.innerHTML = inputSize;
+        cell1.innerHTML = formatInputSize(inputSize);
         cell2.innerHTML = sequentialTime;
         cell3.innerHTML = concurrentTime;
         cell4.innerHTML = `${performance}%`;
+      }
+
+      function formatInputSize(size) {
+        const abbreviations = ["K", "M"];
+        let formattedSize = size;
+        console.log(`this is the inputsize: ${formattedSize}`);
+        for (const abbreviation of abbreviations) {
+          if (formattedSize >= 1000000) {
+            formattedSize /= 1000000;
+            return `${formattedSize.toFixed(0)}${abbreviations[1]}`
+          } else if(formattedSize >= 1000 && formattedSize<1000000){
+            formattedSize /= 1000;
+            return `${formattedSize.toFixed(0)}${abbreviations[0]}`
+          }else {
+            break;
+          }
+        }
+
+        return `${formattedSize}`;
       }
     </script>
   </body>
