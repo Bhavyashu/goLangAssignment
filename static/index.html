@@ -75,17 +75,16 @@
     <input type="file" id="jsonFileInput" accept=".json" />
 
     <div id="buttonContainer">
-      <button onclick="sortSequentially()">Sort Sequentially</button>
-      <button onclick="sortConcurrently()">Sort Concurrently</button>
+        <button onclick="testPerformance()">Test Performance</button>
     </div>
 
     <table id="resultTable">
       <thead>
         <tr>
           <th>Input Size</th>
-          <th>Sorting Method</th>
-          <th>Time Taken (Nano Seconds)</th>
-          <th>Seconds</th>
+          <th>Sequential Sorting (ns)</th>
+          <th>Concurrent Sorting (ns)</th>
+          <th>Performance Imporvement</th>
         </tr>
       </thead>
       <tbody id="resultBody"></tbody>
@@ -94,64 +93,74 @@
     <script>
       // Change backendUrl according to the environment whether it's local or deploying on the render.com
       const backendUrl ='http://localhost:8080';
-      async function sortSequentially() {
-        await sortData("process-single");
-      }
 
-      async function sortConcurrently() {
-        await sortData("process-concurrent");
-      }
+      async function testPerformance() {
+        const inputSizes = [10, 100, 1000, 10000, 100000];
 
-      async function sortData(endpoint) {
-        const fileInput = document.getElementById("jsonFileInput");
-        const file = fileInput.files[0];
+        for (const inputSize of inputSizes) {
+          const fileInput = document.getElementById("jsonFileInput");
+          const file = fileInput.files[0];
 
-        if (file) {
-          const reader = new FileReader();
+          if (file) {
+            const reader = new FileReader();
 
-          reader.onload = async function (e) {
-            try {
-              const jsonContent = JSON.parse(e.target.result);
+            reader.onload = async function (e) {
+              try {
+                const jsonContent = JSON.parse(e.target.result);
 
-              if (jsonContent && jsonContent.to_sort) {
-                const response = await fetch(
-                  `${backendUrl}/${endpoint}`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ to_sort: jsonContent.to_sort }),
-                  }
-                );
+                // Slice the input array or double the size if needed
+                let slicedInput = [];
+                if(jsonContent.to_sort.length>inputSize){
+                  slicedInput = jsonContent.to_sort.slice(0, inputSize);
+                }else{
+                  slicedInput = [...jsonContent.to_sort, ...jsonContent.to_sort];
+                }
+                console.log(slicedInput.length);
 
-                const result = await response.json();
-                const sortMethod =
-                  endpoint == "process-single" ? "Sequential" : "Cocurrent";
-                const seconds = result.time_ns / 1e9; // Convert nanoseconds to seconds
-                updateResultTable(
-                  jsonContent.to_sort.length,
-                  sortMethod,
-                  result.time_ns,
-                  seconds.toFixed(6) // Display seconds with up to 6 decimal places
-                );
-              } else {
-                console.error(
-                  'Invalid JSON format. Please make sure the file contains a "to_sort" array.'
-                );
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                const sequentialResponse = await sendSortingRequest("process-single", slicedInput);
+                // await new Promise(resolve => setTimeout(resolve, 1000));
+                const concurrentResponse = await sendSortingRequest("process-concurrent", slicedInput);
+              
+
+                const sequentialSeconds = sequentialResponse.time_ns 
+                const concurrentSeconds = concurrentResponse.time_ns 
+
+                // Calculate performance percentage
+                const performance = ((sequentialSeconds - concurrentSeconds) / sequentialSeconds) * 100;
+
+                // Update the table with the results
+                updateResultTable(inputSize, sequentialSeconds.toFixed(0), concurrentSeconds.toFixed(0), performance.toFixed(2));
+              } catch (error) {
+                console.error("Error processing data:", error);
               }
-            } catch (error) {
-              console.error("Error parsing JSON:", error);
-            }
-          };
+            };
 
-          reader.readAsText(file);
-        } else {
-          console.error("Please select a JSON file.");
+            reader.readAsText(file);
+          } else {
+            console.error("Please select a JSON file.");
+          }
         }
       }
 
-      function updateResultTable(inputSize, sortingMethod, timeTaken, seconds) {
+      async function sendSortingRequest(endpoint, toSort) {
+        const response = await fetch(
+          `${backendUrl}/${endpoint}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ to_sort: toSort }),
+          }
+        );
+
+        return response.json();
+      }
+
+      function updateResultTable(inputSize, sequentialTime, concurrentTime, performance) {
         const resultBody = document.getElementById("resultBody");
         const newRow = resultBody.insertRow();
 
@@ -161,9 +170,9 @@
         const cell4 = newRow.insertCell(3);
 
         cell1.innerHTML = inputSize;
-        cell2.innerHTML = sortingMethod;
-        cell3.innerHTML = timeTaken;
-        cell4.innerHTML = seconds;
+        cell2.innerHTML = sequentialTime;
+        cell3.innerHTML = concurrentTime;
+        cell4.innerHTML = `${performance}%`;
       }
     </script>
   </body>
