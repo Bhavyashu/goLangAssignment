@@ -92,6 +92,8 @@
     </table>
 
     <script>
+      // Change backendUrl according to the environment whether it's local or deploying on the render.com
+      const backendUrl ='https://arraysorter.onrender.com';
       async function sortSequentially() {
         await sortData("process-single");
       }
@@ -113,7 +115,7 @@
 
               if (jsonContent && jsonContent.to_sort) {
                 const response = await fetch(
-                  `http://localhost:8080/${endpoint}`,
+                  `${backendUrl}/${endpoint}`,
                   {
                     method: "POST",
                     headers: {
